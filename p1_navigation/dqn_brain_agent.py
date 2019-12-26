@@ -168,13 +168,14 @@ class ReplayBuffer:
         """Return the current size of internal memory."""
         return len(self.memory)
 
-def train_dqn(env, brain_agent, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def train_dqn(env, brain_agent, solved_score=13.0, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """train a deep q-learning agent.
     
     Params
     ======
         env (UnityEnvironment): environment (Unity or Gym) in which agent is trained
         brain_agent (BrainAgent): agent being trained
+        solved_score (float): score needed to consider environment solved (avg over 100 episodes)
         n_episodes (int): maximum number of training episodes
         max_t (int): maximum number of timesteps per episode
         eps_start (float): starting value of epsilon, for epsilon-greedy action selection
@@ -211,10 +212,11 @@ def train_dqn(env, brain_agent, n_episodes=2000, max_t=1000, eps_start=1.0, eps_
         scores_window.append(score)       # save most recent score
         scores.append(score)              # save most recent score
         eps = max(eps_end, eps_decay*eps) # decrease epsilon
+
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
-        if np.mean(scores_window)>=200.0:
+        if np.mean(scores_window)>=solved_score:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
             torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
             break
