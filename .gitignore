@@ -1,5 +1,14 @@
-# Project executables
-/p1_navigation/Banana_Linux/*
+# temporary files
+*.swp
+
+# Jupyter Notebook
+.ipynb_checkpoints
 
 # Project executables
 /p1_navigation/Banana_Linux/*
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Django stuff:
+*.log
