@@ -4,7 +4,7 @@
 
 # Project 1: Navigation
 
-### Introduction
+## Introduction
 
 For this project, you will train an agent to navigate (and collect bananas!) in a large, square world.  
 
@@ -20,7 +20,7 @@ The state space has 37 dimensions and contains the agent's velocity, along with 
 
 The task is episodic, and in order to solve the environment, your agent must get an average score of +13 over 100 consecutive episodes.
 
-### Getting Started
+## Getting Started
 
 1. Create and activate a conda environment to establish the correct dependencies (e.g. Python3, PyTorch, etc)
 
@@ -41,6 +41,26 @@ source activate public_drlnd 				# this needs to be run everytime
 
 3. Place the file in the `public-deep-rl` GitHub repository, in the `p1_navigation/` folder, and unzip (or decompress) the file. 
 
-### Instructions
+## Instructions
+
+### Training
 
 Follow the instructions in `Navigation.ipynb` to get started with training your own agent!  
+
+### Analysis
+
+The `training_analysis.py` module contains functions for plotting learning curves and visualizing the behavior of a trained agent.
+
+To plot learning curves with data saved in `.pkl` files, you can run the following from the command line (this example assumes there are pickle files titled `vanilla_scores.pkl` and `ddqn_scores.pkl`:
+
+```
+python training_analysis.py vanilla_scores.pkl ddqn_scores.pkl
+```
+
+To visualize the behavior of a trained agent, you must use a python interactive shell like `ipython`. Assuming that an agent has been trained and the model saved in `vanilla_checkpoint.pth`, you can run the following to visualize the learned behavior
+
+```
+ipython
+from training_analysis.py import visualize_agent
+visualize_agent('vanilla_checkpoint.pth') 
+```

@@ -37,7 +37,10 @@ The following hyperparameters were used during training:
 + BATCH_SIZE = 64         # minibatch size
 + GAMMA = 0.99            # discount factor
 + TAU = 1e-3              # for soft update of target parameters
-+ LR = 5e-4               # learning rate 
++ LR = 5e-4               # learning rate
++ eps_start = 1.0		  # initial epsilon exploration factor
++ eps_eps_end=0.01        # final epsilon exploration factor
++ eps_decay=0.995         # decay rate of exploration factor
 
 ## Plot of Rewards
 
