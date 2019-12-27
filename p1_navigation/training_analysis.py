@@ -2,6 +2,21 @@ import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 import sys
+import torch
+from unityagents import UnityEnvironment
+from dqn_brain_agent import train_dqn, BrainAgent
+
+def visualize_agent():
+    """ Render agent interacting with environment
+    """
+
+    env = UnityEnvironment(file_name="./Banana_Linux/Banana.x86_64")
+    brain_agent = BrainAgent(env.brain_names[0], env.brains[env.brain_names[0]])
+    brain_agent.dqn_local.load_state_dict(torch.load('vanilla_checkpoint.pth'))
+    brain_agent.dqn_local.eval()
+    train_dqn(env, brain_agent, train_mode=False, n_episodes=1, eps_start=0., eps_end=0.)
+    env.close()
+
 
 def plot_results(scores_list, threshold=13.0, window_len=100):
     """ Plot and analyze training results
