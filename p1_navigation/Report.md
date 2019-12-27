@@ -12,6 +12,14 @@ The combination of deep neural networks and Q-learning is often referred to as [
 
 ### Model Architecture
 
+### Code Structure
+
+The code is broken into jupyter notebooks (`.ipynb`), python scripts and modules (`.py`), markdown files (`.md`), model checkpoints (`.pth`), and data log files (`.pkl`). 
+The jupyter notebook `Navigation.ipynb` is effectively the "main" function for the code. It is responsible for establishing the environment (i.e. `unityagents.UnityEnvironment`), creating the agents that interact with the environment (i.e. `dqn_brain_agent.BrainAgent`), and executing the training for various agents (i.e. `dqn_brain_agent.train_dqn`). 
+
+
+### Hyperparameters
+
 ## Plot of Rewards
 
 ## Ideas for Future Work
