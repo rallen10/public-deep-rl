@@ -181,8 +181,7 @@ class ReplayBuffer:
         return len(self.memory)
 
 def train_dqn(env, brain_agent, 
-    checkpoint_filename='checkpoint.pth', scores_filename='scores.pkl',
-    solved_score=13.0, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+    prefix='default', solved_score=13.0, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """train a deep q-learning agent.
     
     Params
@@ -196,6 +195,9 @@ def train_dqn(env, brain_agent,
         eps_end (float): minimum value of epsilon
         eps_decay (float): multiplicative factor (per episode) for decreasing epsilon
     """
+
+    checkpoint_filename = prefix + '_checkpoint.pth'
+    scores_filename = prefix + '_scores.pkl'
     scores = []                        # list containing scores from each episode
     scores_window = deque(maxlen=100)  # last 100 scores
     eps = eps_start                    # initialize epsilon
