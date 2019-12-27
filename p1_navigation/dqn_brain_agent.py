@@ -1,6 +1,7 @@
 import numpy as np
 import random
 from collections import namedtuple, deque
+import pickle
 
 from model import DeepQNetwork
 
@@ -14,6 +15,7 @@ GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR = 5e-4               # learning rate 
 UPDATE_EVERY = 4        # how often to update the network
+SAVE_EVERY = 100        # how often to save progress
 
 # Use GPU if it available
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -77,13 +79,14 @@ class BrainAgent():
         else:
             return random.choice(np.arange(self.brain.vector_action_space_size))
 
-    def learn(self, experiences, gamma):
+    def learn(self, experiences, gamma, ddqn=False):
         """Update value parameters using given batch of experience tuples.
 
         Params
         ======
             experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples 
             gamma (float): discount factor
+            ddqn (bool): double q-learning
         """
         observations, actions, rewards, next_observations, dones = experiences
 
@@ -92,11 +95,20 @@ class BrainAgent():
         q_values = self.dqn_local.forward(observations).gather(1,actions)
 
         # compute target q values
-        # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
-        # of tensor network
-        # - maximize over all possible actions for each input, and reshape
-        q_targets_next = self.dqn_target.forward(next_observations).detach().max(1)[0].unsqueeze(1)
-        q_targets = rewards + gamma*q_targets_next*(1-dones)
+        if ddqn:
+            # use deep double q-learning to compute targets
+            # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
+            # of tensor network
+            a_max = self.dqn_local.forward(next_observations).detach().argmax(1)[0].unsqueeze(1)
+            q_targets_next = self.dqn_target.forward(next_observations).detach()[a_max]
+            q_targets = rewards + gamma*q_targets_next*(1-dones)
+        else:
+            # use vanilla q-learning to compute targets
+            # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
+            # of tensor network
+            # - maximize over all possible actions for each input, and reshape
+            q_targets_next = self.dqn_target.forward(next_observations).detach().max(1)[0].unsqueeze(1)
+            q_targets = rewards + gamma*q_targets_next*(1-dones)
 
         # compute loss
         loss = F.mse_loss(q_targets, q_values)
@@ -168,7 +180,9 @@ class ReplayBuffer:
         """Return the current size of internal memory."""
         return len(self.memory)
 
-def train_dqn(env, brain_agent, solved_score=13.0, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def train_dqn(env, brain_agent, 
+    checkpoint_filename='checkpoint.pth', scores_filename='scores.pkl',
+    solved_score=13.0, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """train a deep q-learning agent.
     
     Params
@@ -214,11 +228,14 @@ def train_dqn(env, brain_agent, solved_score=13.0, n_episodes=2000, max_t=1000, 
         eps = max(eps_end, eps_decay*eps) # decrease epsilon
 
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
-        if i_episode % 100 == 0:
+        if i_episode % SAVE_EVERY == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
-            torch.save(brain_agent.dqn_local.state_dict(), 'checkpoint.pth')
+            torch.save(brain_agent.dqn_local.state_dict(), checkpoint_filename)
+            pickle.dump(scores, open(scores_filename, 'wb'))
         if np.mean(scores_window)>=solved_score:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(brain_agent.dqn_local.state_dict(), 'checkpoint.pth')
+            torch.save(brain_agent.dqn_local.state_dict(), checkpoint_filename)
+            pickle.dump(scores, open(scores_filename, 'wb'))
             break
+
     return scores
