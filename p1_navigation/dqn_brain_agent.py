@@ -96,20 +96,21 @@ class BrainAgent():
         q_values = self.dqn_local.forward(observations).gather(1,actions)
 
         # compute target q values
-        if self.ddqn:
-            # use deep double q-learning to compute targets
-            # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
-            # of tensor network
-            a_max = self.dqn_local.forward(next_observations).detach().argmax(1)
-            q_targets_next = self.dqn_target.forward(next_observations).detach()[a_max]
-            q_targets = rewards + gamma*q_targets_next*(1-dones)
-        else:
-            # use vanilla q-learning to compute targets
-            # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
-            # of tensor network
-            # - maximize over all possible actions for each input, and reshape
-            q_targets_next = self.dqn_target.forward(next_observations).detach().max(1)[0].unsqueeze(1)
-            q_targets = rewards + gamma*q_targets_next*(1-dones)
+        with torch.no_grad():
+            if self.ddqn:
+                # use deep double q-learning to compute targets
+                # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
+                # of tensor network
+                argmax_actions = self.dqn_local.forward(next_observations).argmax(1)
+                q_targets_next = self.dqn_target.forward(next_observations).gather(1,argmax_actions)
+                q_targets = rewards + gamma*q_targets_next*(1-dones)
+            else:
+                # use vanilla q-learning to compute targets
+                # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
+                # of tensor network
+                # - maximize over all possible actions for each input, and reshape
+                q_targets_next = self.dqn_target.forward(next_observations).max(1)[0].unsqueeze(1)
+                q_targets = rewards + gamma*q_targets_next*(1-dones)
 
         # compute loss
         loss = F.mse_loss(q_targets, q_values)
