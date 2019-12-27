@@ -6,14 +6,13 @@ import torch
 from unityagents import UnityEnvironment
 from dqn_brain_agent import train_dqn, BrainAgent
 
-def visualize_agent():
+def visualize_agent(checkpoint_filename='default_checkpoint.pth'):
     """ Render agent interacting with environment
     """
 
     env = UnityEnvironment(file_name="./Banana_Linux/Banana.x86_64")
     brain_agent = BrainAgent(env.brain_names[0], env.brains[env.brain_names[0]])
-    brain_agent.dqn_local.load_state_dict(torch.load('vanilla_checkpoint.pth'))
-    brain_agent.dqn_local.eval()
+    brain_agent.dqn_local.load_state_dict(torch.load(checkpoint_filename))
     train_dqn(env, brain_agent, train_mode=False, n_episodes=1, eps_start=0., eps_end=0.)
     env.close()
 
