@@ -3,7 +3,7 @@ import pickle
 import matplotlib.pyplot as plt
 import sys
 
-def plot_results(scores_list, window_len=100):
+def plot_results(scores_list, threshold=13.0, window_len=100):
     """ Plot and analyze training results
 
     Params
@@ -35,6 +35,8 @@ def plot_results(scores_list, window_len=100):
         # ax.fill_between(np.arange(len(scores)), mv_avg-mv_std, mv_avg+mv_std, alpha=0.3)
         ax.fill_between(np.arange(len(scores)), mv_q16, mv_q84, alpha=0.3)
 
+    # plot success threshold
+    plt.hlines(threshold, 0, len(scores), colors='r', linestyles='dashed')
     plt.title('Banana Navigation DQN Learning Curves')
     plt.ylabel('Score')
     plt.xlabel('Episode #')

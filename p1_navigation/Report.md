@@ -43,4 +43,10 @@ The following hyperparameters were used during training:
 
 ![DQN Learning Curves][image1]
 
+In the above plot we see the results of training a "vanilla" Deep Q-Network agent as well as a Double Deep Q-Network (DDQN). The trend lines show the moving average reward over the last 100 episodes with the shaded region indicating the range between the 16\% and 84\% quantile (approximately one standard deviation if score distribution were normal). 
+We see that, for this particular environment, DDQN does not appear to provide any notable benefit over "vanilla" DQN. Both approaches successfully "solve" the environment (i.e. achieve average rewards of +13) in less than 500 episodes and have similar spreads for their 16-84 quantile range.
+
+
 ## Ideas for Future Work
+
+The most interesting future work would be to compare the vanilla and DDQN results with an implementation of the [Rainbow](https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/viewPaper/17204) algorithm improvements for DQN.
