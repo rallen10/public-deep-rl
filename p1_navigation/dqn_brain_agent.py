@@ -95,19 +95,15 @@ class BrainAgent():
         # Note: dqn outputs value of all actions, so we need to gather the values of just the actions taken
         q_values = self.dqn_local.forward(observations).gather(1,actions)
 
-        # compute target q values
+        # compute target q values. Don't compute gradients for targets,
         with torch.no_grad():
             if self.ddqn:
                 # use deep double q-learning to compute targets
-                # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
-                # of tensor network
                 argmax_actions = self.dqn_local.forward(next_observations).argmax(1)
                 q_targets_next = self.dqn_target.forward(next_observations).gather(1,argmax_actions)
                 q_targets = rewards + gamma*q_targets_next*(1-dones)
             else:
                 # use vanilla q-learning to compute targets
-                # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
-                # of tensor network
                 # - maximize over all possible actions for each input, and reshape
                 q_targets_next = self.dqn_target.forward(next_observations).max(1)[0].unsqueeze(1)
                 q_targets = rewards + gamma*q_targets_next*(1-dones)
