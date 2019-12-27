@@ -10,5 +10,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 
-# Django stuff:
+# data files:
 *.log
+*.pkl
