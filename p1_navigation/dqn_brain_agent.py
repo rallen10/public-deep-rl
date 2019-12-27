@@ -216,8 +216,9 @@ def train_dqn(env, brain_agent, solved_score=13.0, n_episodes=2000, max_t=1000, 
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
+            torch.save(brain_agent.dqn_local.state_dict(), 'checkpoint.pth')
         if np.mean(scores_window)>=solved_score:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(barin_agent.qnetwork_local.state_dict(), 'checkpoint.pth')
+            torch.save(brain_agent.dqn_local.state_dict(), 'checkpoint.pth')
             break
     return scores
