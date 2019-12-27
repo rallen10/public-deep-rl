@@ -242,5 +242,7 @@ def train_dqn(env, brain_agent,
             pickle.dump(scores, open(scores_filename, 'wb'))
             if stop_solved:
                 break
+            else:
+                print('\nContinuing training...')
 
     return scores
