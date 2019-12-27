@@ -23,7 +23,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class BrainAgent():
     """Interacts with and learns from the environment using ML-Agents Brain Object."""
 
-    def __init__(self, name, brain, seed=0):
+    def __init__(self, name, brain, seed=0, ddqn=False):
         """Initialize an Agent object.
         
         Params
@@ -31,10 +31,12 @@ class BrainAgent():
             name (str): name of brain
             brain (BrainParameters): Unity ML-Agent brain
             seed (int): random seed
+            ddqn (bool): double q-learning
         """
         self.name = name
         self.brain = brain
         self.seed = random.seed(seed)
+        self.ddqn = ddqn
 
         # Q-Network
         self.dqn_local = DeepQNetwork(self.brain.vector_observation_space_size, self.brain.vector_action_space_size, seed).to(device)
@@ -79,14 +81,13 @@ class BrainAgent():
         else:
             return random.choice(np.arange(self.brain.vector_action_space_size))
 
-    def learn(self, experiences, gamma, ddqn=False):
+    def learn(self, experiences, gamma):
         """Update value parameters using given batch of experience tuples.
 
         Params
         ======
             experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples 
             gamma (float): discount factor
-            ddqn (bool): double q-learning
         """
         observations, actions, rewards, next_observations, dones = experiences
 
@@ -95,11 +96,11 @@ class BrainAgent():
         q_values = self.dqn_local.forward(observations).gather(1,actions)
 
         # compute target q values
-        if ddqn:
+        if self.ddqn:
             # use deep double q-learning to compute targets
             # - detach the tensor (i.e. return a copy) from the current graph to not mess with gradient
             # of tensor network
-            a_max = self.dqn_local.forward(next_observations).detach().argmax(1)[0].unsqueeze(1)
+            a_max = self.dqn_local.forward(next_observations).detach().argmax(1)
             q_targets_next = self.dqn_target.forward(next_observations).detach()[a_max]
             q_targets = rewards + gamma*q_targets_next*(1-dones)
         else:
