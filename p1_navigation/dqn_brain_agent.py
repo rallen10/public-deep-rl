@@ -99,7 +99,7 @@ class BrainAgent():
         with torch.no_grad():
             if self.ddqn:
                 # use deep double q-learning to compute targets
-                argmax_actions = self.dqn_local.forward(next_observations).argmax(1)
+                argmax_actions = self.dqn_local.forward(next_observations).argmax(1).unsqueeze(1)
                 q_targets_next = self.dqn_target.forward(next_observations).gather(1,argmax_actions)
                 q_targets = rewards + gamma*q_targets_next*(1-dones)
             else:
@@ -179,7 +179,8 @@ class ReplayBuffer:
         return len(self.memory)
 
 def train_dqn(env, brain_agent, 
-    prefix='default', solved_score=13.0, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+    prefix='default', solved_score=13.0, stop_solved=True, 
+    n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """train a deep q-learning agent.
     
     Params
@@ -187,6 +188,7 @@ def train_dqn(env, brain_agent,
         env (UnityEnvironment): environment (Unity or Gym) in which agent is trained
         brain_agent (BrainAgent): agent being trained
         solved_score (float): score needed to consider environment solved (avg over 100 episodes)
+        stop_solved (bool): stop training when solved
         n_episodes (int): maximum number of training episodes
         max_t (int): maximum number of timesteps per episode
         eps_start (float): starting value of epsilon, for epsilon-greedy action selection
@@ -194,6 +196,7 @@ def train_dqn(env, brain_agent,
         eps_decay (float): multiplicative factor (per episode) for decreasing epsilon
     """
 
+    solved = False
     checkpoint_filename = prefix + '_checkpoint.pth'
     scores_filename = prefix + '_scores.pkl'
     scores = []                        # list containing scores from each episode
@@ -232,10 +235,12 @@ def train_dqn(env, brain_agent,
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
             torch.save(brain_agent.dqn_local.state_dict(), checkpoint_filename)
             pickle.dump(scores, open(scores_filename, 'wb'))
-        if np.mean(scores_window)>=solved_score:
+        if np.mean(scores_window)>=solved_score and not solved:
+            solved = True
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
             torch.save(brain_agent.dqn_local.state_dict(), checkpoint_filename)
             pickle.dump(scores, open(scores_filename, 'wb'))
-            break
+            if stop_solved:
+                break
 
     return scores
