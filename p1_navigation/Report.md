@@ -1,3 +1,7 @@
+[//]: # (Image References)
+
+[image1]: learning_curves.png "DQN Learning Curves"
+
 # Report: Navigation Project
 
 This work uses Q-learning with a deep neural network function approximator to train an autonomous agent to navigate through an environment containing positive and negative rewards.  
@@ -36,5 +40,7 @@ The following hyperparameters were used during training:
 + LR = 5e-4               # learning rate 
 
 ## Plot of Rewards
+
+![DQN Learning Curves][image1]
 
 ## Ideas for Future Work

@@ -35,6 +35,7 @@ def plot_results(scores_list, window_len=100):
         # ax.fill_between(np.arange(len(scores)), mv_avg-mv_std, mv_avg+mv_std, alpha=0.3)
         ax.fill_between(np.arange(len(scores)), mv_q16, mv_q84, alpha=0.3)
 
+    plt.title('Banana Navigation DQN Learning Curves')
     plt.ylabel('Score')
     plt.xlabel('Episode #')
     plt.legend(titles)
