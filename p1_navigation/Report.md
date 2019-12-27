@@ -15,8 +15,11 @@ The combination of deep neural networks and Q-learning is often referred to as [
 ### Code Structure
 
 The code is broken into jupyter notebooks (`.ipynb`), python scripts and modules (`.py`), markdown files (`.md`), model checkpoints (`.pth`), and data log files (`.pkl`). 
+
 The jupyter notebook `Navigation.ipynb` is effectively the "main" function for the code. It is responsible for establishing the environment (i.e. `unityagents.UnityEnvironment`), creating the agents that interact with the environment (i.e. `dqn_brain_agent.BrainAgent`), and executing the training for various agents (i.e. `dqn_brain_agent.train_dqn`). 
 
+The python module `dqn_brain_agent.py` contains most of the source code run by `Navigation.ipynb`. The `dqn_brain_agent` module provides a class for defining trainable agents (`BrainAgent`) and a function for stepping through the training processes (`train_dqn`). 
+The `BrainAgent` class defines objects for storing and training the agents that interact with the environment. The policy for selecting actions given an observation of the environment is an [epsilon-greedy strategy](https://en.wikipedia.org/wiki/Multi-armed_bandit#Semi-uniform_strategies) based on the estimated action value function and is defined in `BrainAgent.act`. The action value function is stored in `BrainAgent.dqn_local`, is a object of type `DeepQNetwork` defined in the `model.py` module. The `BrainAgent.dqn_local` action value function is a deep neural network defined using PyTorch. The network takes input vectors of size 37 (i.e. the observation space size for the environment) and outputs vectors of size 4 (i.e. the action space size for the environment). 
 
 ### Hyperparameters
 
