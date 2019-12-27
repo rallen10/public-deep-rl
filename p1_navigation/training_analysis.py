@@ -14,9 +14,11 @@ def plot_results(scores_list, window_len=100):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    titles = []
     for scores in scores_list:
         if isinstance(scores, str):
             # load from file
+            titles.append(scores)
             scores = pickle.load(open(scores, 'rb'))
         
         # compute moving average and standard deviation
@@ -35,6 +37,7 @@ def plot_results(scores_list, window_len=100):
 
     plt.ylabel('Score')
     plt.xlabel('Episode #')
+    plt.legend(titles)
     plt.show()
 
 if __name__ == '__main__':

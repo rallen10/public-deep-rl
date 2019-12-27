@@ -1,4 +1,4 @@
-# Navigation Report
+# Report: Navigation Project
 
 This work uses Q-learning with a deep neural network function approximator to train an autonomous agent to navigate through an environment containing positive and negative rewards.  
 The environment consists of a square, 2D world randomly populated with bananas and is rendered using the [Unity game engine](https://unity.com/) and is derived from [Unity's ML-Agent library](https://github.com/Unity-Technologies/ml-agents). Yellow bananas are positive rewards that the agent should collect, and blue bananas are negative rewards that the agent should avoid
@@ -25,7 +25,7 @@ The `training_analysis.py` module defines functions for plotting and visualizing
 python training_analysis vanilla_scores.pkl ddqn_scores.pkl
 ```
 
-will render a plot of the learning curves for the vanilla and double DQN algorithm based on training data stored in the respective `.pkl` pickle files
+will render a plot of the learning curves for the vanilla and double DQN algorithm based on training data stored in the respective `.pkl` pickle files. The ability to render plots from command line using saved pickle files makes it easier and faster to iterate on the post-processing scripts without re-running training.
 
 The following hyperparameters were used during training:
 
