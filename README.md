@@ -6,7 +6,7 @@ This is a public-facing repo for sharing projects completed as part of [Udacity'
 
 ## Installation
 
-The dependencies are management using a [Conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html). 
+The dependencies are managed using a [Conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html). 
 After cloning the repository, establish the conda environment with
 
 ```
