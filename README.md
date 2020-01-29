@@ -1,3 +1,5 @@
+![](https://github.com/rallen10/public-deep-rl/workflows/pytests/badge.svg)
+
 # Udacity Deep RL Projects
 
 This is a public-facing repo for sharing projects completed as part of [Udacity's Deep RL Course](https://www.udacity.com/course/deep-reinforcement-learning-nanodegree--nd893)
