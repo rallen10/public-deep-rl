@@ -105,6 +105,8 @@ def collect_trajectories(env, agent_mind, n_agents, desired_batch_size, batch_in
         agent_mind (ActorCriticMind): mind used to control (parallel) agents in environment
         n_agents (int): number of parallel instances
         desired_batch_size (int): maximum timesteps per batch
+        batch_init_observation (array): first observation for continuing execution
+        reset_environment (bool): command to reset environment after end of episode
 
     Returns
     =======
@@ -173,20 +175,20 @@ def collect_trajectories(env, agent_mind, n_agents, desired_batch_size, batch_in
             "next_dones": next_dones,
             "episode_done": episode_done}
 
-def clipped_policy_surrogate(policy, observations, act_log_probs, actions, advantages,
-                      epsilon, beta):
+def clipped_policy_surrogate(policy, observations, act_log_probs, 
+    actions, advantages, epsilon):
     ''' clipped surrogate loss function from batch of episodes
 
     Params:
     =======
     policy (DeepNetwork): policy network
-    observations (Tensor): observation batch, 
-        index t holds the n_agents parallel observations at timestep t
-    act_log_probs (Tensor): action log probability batch
-    actions (Tensor): actions batch
-    advantages (Tensor): advantages batch
+    observations (Tensor): observation minibatch
+        element at [mbi][i] is the observation of agent i 
+        from minibatch index mbi
+    act_log_probs (Tensor): action log probability minibatch
+    actions (Tensor): actions minibatch
+    advantages (Tensor): advantages minibatch
     epsilon (float): clippiing factor
-    beta (float): entropy weighting faction (exploration)
 
     Returns:
     ========
@@ -204,32 +206,19 @@ def clipped_policy_surrogate(policy, observations, act_log_probs, actions, advan
     assert actions.shape[0:2] == batch_shape[0:2]
 
     # compute action log probabilities and entropy under new policy
-    # print("surrogate observation shape: {}".format(observations.shape))
     _, new_act_log_probs, entropy = policy.forward(observations, action=actions)
     assert new_act_log_probs.shape == batch_shape
     assert entropy.shape == actions.shape
-
-    # print("DEBUG: observation shape: {}".format(observations.shape))
-    # print("DEBUG: actions shape: {}".format(actions.shape))
-    # print("DEBUG: new act log probs shape: {}".format(new_act_log_probs.shape))
-    # print("DEBUG: entropy shape: {}".format(entropy.shape))
-    # entropy = torch.mean(entropy, dim=1)
-    # new_act_log_probs.squeeze_(-1)
     
     # compute policy ratio
-    # # ratio =  new_probs/old_probs
-    # print("DEBUG: act log probs shape: {}".format(act_log_probs.shape))
-    # print("DEBUG: new act log probs shape: {}".format(new_act_log_probs.shape))
     ratio = torch.exp(new_act_log_probs - act_log_probs)
     assert ratio.shape == batch_shape
-    # print("DEBUG: ratio shape: {}".format(ratio.shape))
 
     # clipped surrogate loss value
     clip = torch.clamp(ratio, 1-epsilon, 1+epsilon)
     clipped_L = torch.min(ratio*advantages, clip*advantages)
     assert clip.shape == clipped_L.shape == batch_shape
     
-    # return torch.mean(clipped_L + beta*entropy)
     return clipped_L.mean(), entropy.mean()
     
 
@@ -248,19 +237,26 @@ def train_actor_critic_mind(env, agent_mind, n_agents, gamma=0.995, lam=0.9,
         agent_mind (ActorCriticMind): mind used to control (parallel) agents in environment
         n_agents (int): number of agents controlled by the agent_mind
         gamma (float): return discounting factor
-        lambda (float): general advantage function parameter
+        lam (float): general advantage function parameter
         prefix (str): name used to create save files
-        solved_score (float): score needed to consider environment solved (avg over 100 episodes)
+        solved_score (float): score needed to consider environment solved 
+        solved_window (int): number of episodes to average over to determine if solved
         stop_solved (bool): stop training when solved
+        train_mode (bool); whether training should occur (otherwise just used to visualize policy)
         n_episodes (int): maximum number of training episodes
-        max_episode_len (int): maximum number of timesteps per episode
+        desired_batch_size (int):
+        desired_minibatch_size (int): 
+        save_rate
         n_epochs (int): number of epochs to train per batch
-        epsilon_start (float): starting value of epsilon, for clipping fraction
-        epsilon_end (float): minimum value of epsilon
-        epsilon_decay (float): multiplicative factor (per episode) for decreasing epsilon
         beta_start (float): starting value of beta, for entropy exploration
         beta_end (float): minimum value of beta
         beta_decay (float): multiplicative factor (per episode) for decreasing beta
+        epsilon_start (float): starting value of epsilon, for clipping fraction
+        epsilon_end (float): minimum value of epsilon
+        epsilon_decay (float): multiplicative factor (per batch) for decreasing epsilon
+        v_epsilon_start (float): starting value of value clipping fraction
+        v_epsilon_end (float): minimum value of value clipping fraction
+        v_epsilon_decay (float): multiplicative factor (per batch) for decreasing v_epsilon
     """
 
     # check inputs
@@ -296,8 +292,6 @@ def train_actor_critic_mind(env, agent_mind, n_agents, gamma=0.995, lam=0.9,
     # loop through training batches (may be more than one per episode)
     while True:
         batch_count += 1
-
-        # print("Training Iteration: {}".format(batch_iter))
 
         # collect batch of trajectories trajectories
         batch_data = collect_trajectories(
@@ -427,48 +421,25 @@ def train_actor_critic_mind(env, agent_mind, n_agents, gamma=0.995, lam=0.9,
                     checkvar2 = np.random.randint(n_agents)
 
                     # format training batch into minibatches
-                    # observe_minibatch = observe_batch[batch_indices[mbi_start:mbi_start+minibatch_size]].reshape(
-                    #     minibatch_size*n_agents, agent_mind.brain.vector_observation_space_size)
-                    # act_log_prob_minibatch = act_log_prob_batch[batch_indices[mbi_start:mbi_start+minibatch_size]].reshape(
-                    #     minibatch_size*n_agents, 1)
-                    # action_minibatch = action_batch[batch_indices[mbi_start:mbi_start+minibatch_size]].reshape(
-                    #     minibatch_size*n_agents, agent_mind.brain.vector_action_space_size)
-                    # advantage_minibatch = advantage_batch[batch_indices[mbi_start:mbi_start+minibatch_size]].reshape(
-                    #     minibatch_size*n_agents, 1)
-                    # returns_minibatch = returns_batch[batch_indices[mbi_start:mbi_start+minibatch_size]].reshape(
-                    #     minibatch_size*n_agents, 1)
-                    # value_minibatch = value_batch[batch_indices[mbi_start:mbi_start+minibatch_size]].reshape(
-                    #     minibatch_size*n_agents, 1)
-                    # assert all(np.isclose(observe_minibatch[0], observe_batch[mbi_start][0]))
-                    # assert all(np.isclose(observe_minibatch[0], observe_batch[mbi_start][0]))
                     observe_minibatch = observe_batch[batch_indices[mbi_start:mbi_start+minibatch_size]]
-                    assert observe_minibatch.shape == (minibatch_size, n_agents, agent_mind.brain.vector_observation_space_size)
                     action_minibatch = action_batch[batch_indices[mbi_start:mbi_start+minibatch_size]]
-                    assert action_minibatch.shape == (minibatch_size, n_agents, agent_mind.brain.vector_action_space_size)
                     act_log_prob_minibatch = act_log_prob_batch[batch_indices[mbi_start:mbi_start+minibatch_size]]
-                    assert act_log_prob_minibatch.shape == (minibatch_size, n_agents, 1)
                     advantage_minibatch = advantage_batch[batch_indices[mbi_start:mbi_start+minibatch_size]]
-                    assert advantage_minibatch.shape == (minibatch_size, n_agents, 1)
                     returns_minibatch = returns_batch[batch_indices[mbi_start:mbi_start+minibatch_size]]
-                    assert returns_minibatch.shape == (minibatch_size, n_agents, 1)
                     value_minibatch = value_batch[batch_indices[mbi_start:mbi_start+minibatch_size]]
-                    assert value_minibatch.shape == (minibatch_size, n_agents, 1)
 
-                    # print("mbi_start: {}".format(mbi_start))
-                    # print("minibatch_indices: {}".format(batch_indices[mbi_start:mbi_start+minibatch_size]))
-                    # print("checkvar1: {}".format(checkvar1))
-                    # print("checkvar2: {}".format(checkvar2))
-                    # print("obs checvar mbatch {}\n obs checkvars batch  {}".format(observe_minibatch[checkvar1][checkvar2], observe_batch[mbi_start + checkvar1][checkvar2]))
+                    # perform checks on minibatch formation
+                    # NOTE: this would be rmoved for production code, 
+                    # but it's great for testing logic and debugging in
+                    # prototype code
+                    assert observe_minibatch.shape == (minibatch_size, n_agents, agent_mind.brain.vector_observation_space_size)
+                    assert action_minibatch.shape == (minibatch_size, n_agents, agent_mind.brain.vector_action_space_size)
+                    assert act_log_prob_minibatch.shape == (minibatch_size, n_agents, 1)
+                    assert advantage_minibatch.shape == (minibatch_size, n_agents, 1)
+                    assert returns_minibatch.shape == (minibatch_size, n_agents, 1)
+                    assert value_minibatch.shape == (minibatch_size, n_agents, 1)
                     assert all(np.isclose(observe_minibatch[0][0], observe_batch[batch_indices[mbi_start]][0]))
                     assert all(np.isclose(observe_minibatch[checkvar1][checkvar2], observe_batch[batch_indices[mbi_start + checkvar1]][checkvar2]))
-                    # assert False
-                    # print("mbi_start: {}".format(mbi_start))
-                    # print("minibatch_indices: {}".format(batch_indices[mbi_start:mbi_start+minibatch_size]))
-                    # print("checkvar1: {}".format(checkvar1))
-                    # print("checkvar2: {}".format(checkvar2))
-                    # print("action_batch: {}".format(action_batch))
-                    # print("action_minibatch: {}".format(action_minibatch))
-                    # print(action_minibatch[checkvar1][checkvar2], action_batch[mbi_start + checkvar1][checkvar2])
                     assert all(np.isclose(action_minibatch[checkvar1][checkvar2], action_batch[batch_indices[mbi_start + checkvar1]][checkvar2]))
                     assert np.isclose(act_log_prob_minibatch[checkvar1][checkvar2], act_log_prob_batch[batch_indices[mbi_start + checkvar1]][checkvar2])
                     assert np.isclose(advantage_minibatch[checkvar1][checkvar2], advantage_batch[batch_indices[mbi_start + checkvar1]][checkvar2])
@@ -483,8 +454,7 @@ def train_actor_critic_mind(env, agent_mind, n_agents, gamma=0.995, lam=0.9,
                             act_log_probs = act_log_prob_minibatch, 
                             actions = action_minibatch, 
                             advantages = advantage_minibatch,
-                            epsilon=epsilon, 
-                            beta=beta)
+                            epsilon=epsilon)
                     policy_loss = -clipped_L - beta*entropy
 
                     # Policy update step
@@ -502,14 +472,16 @@ def train_actor_critic_mind(env, agent_mind, n_agents, gamma=0.995, lam=0.9,
 
                     # compute value loss using mean squared error compared with emperical returns
                     vpred = agent_mind.value_network.forward(observe_minibatch)
-                    assert vpred.shape == (minibatch_size, n_agents, 1)
                     vpred_clipped = value_minibatch + torch.clamp(vpred - value_minibatch, -v_epsilon, v_epsilon)
-                    assert vpred_clipped.shape == (minibatch_size, n_agents, 1)
                     vloss1 = torch.pow(vpred - returns_minibatch, 2)
-                    assert vloss1.shape == (minibatch_size, n_agents, 1)
                     vloss2 = torch.pow(vpred_clipped - returns_minibatch, 2)
-                    assert vloss2.shape == (minibatch_size, n_agents, 1)
                     value_loss = torch.mean(torch.max(vloss1, vloss2))
+
+                    assert vpred.shape == (minibatch_size, n_agents, 1)
+                    assert vpred_clipped.shape == (minibatch_size, n_agents, 1)
+                    assert vloss1.shape == (minibatch_size, n_agents, 1)
+                    assert vloss2.shape == (minibatch_size, n_agents, 1)
+
 
                     # Value network update step
                     agent_mind.value_optimizer.zero_grad()
