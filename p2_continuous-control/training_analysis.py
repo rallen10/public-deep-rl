@@ -120,4 +120,6 @@ def plot_actor_critic_results(algorithm_results_list, threshold=None, window_len
     plt.show()
 
 if __name__ == '__main__':
-    plot_actor_critic_results(algorithm_results_list=sys.argv[1:])
+    plot_actor_critic_results(algorithm_results_list=sys.argv[1:], 
+        window_len=10,
+        plt_title="Continuous Control Learning Curves\nfor PPO-GAE with various lambda values")
