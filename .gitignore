@@ -14,3 +14,4 @@ __pycache__/
 # data files:
 *.log
 *.pkl
+*.pth
